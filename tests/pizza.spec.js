@@ -6,6 +6,69 @@ test('home page', async ({ page }) => {
     expect(await page.title()).toBe('JWT Pizza');
 });
 
+test('admin dashboard', async ({page}) => {
+    await page.route('*/**/api/auth', async (route) => {
+        const loginRes = { user: { id: 3, name: 'Kai Chen', email: 'd@jwt.com', roles: [{ role: 'admin' }] }, token: 'abcdef' };
+        await route.fulfill({ json: loginRes });
+    });
+    await page.route('*/**/api/franchise', async (route) => {
+        const franchiseRes = [
+            {
+              "id": 1,
+              "name": "pizzaPocket",
+              "stores": [
+                {
+                  "id": 1,
+                  "name": "SLC"
+                }
+              ]
+            }
+          ];
+        await route.fulfill({json: franchiseRes});
+    })
+
+    await page.goto('/');
+    await page.getByRole('link', { name: 'Login' }).click();
+
+    // Login
+    await page.getByPlaceholder('Email address').click();
+    await page.getByPlaceholder('Email address').fill('d@jwt.com');
+    await page.getByPlaceholder('Email address').press('Tab');
+    await page.getByPlaceholder('Password').fill('a');
+    await page.getByRole('button', { name: 'Login' }).click();
+
+    await expect(page.locator('header')).toContainText('KC');
+    await page.getByRole('link', { name: 'Admin' }).click();
+
+    await expect(page).toHaveURL('/admin-dashboard');
+});
+
+test('create franchise', async ({ page }) => {
+    await page.route('*/**/api/franchise', async (route) => {
+        const franchiseRes = {
+            "name": "testing",
+            "admins": [
+              {
+                "email": "d@jwt.com",
+                "id": 4,
+                "name": "pizza franchisee"
+              }
+            ],
+            "id": 1
+          };
+        await route.fulfill({json: franchiseRes});
+    })
+
+    await page.goto('/admin-dashboard/create-franchise');
+    await expect(page).toHaveURL('/admin-dashboard/create-franchise');
+
+    await page.getByPlaceholder('franchise name').click();
+    await page.getByPlaceholder('franchise name').fill('testing');
+    await page.getByPlaceholder('franchisee admin email').click();
+    await page.getByPlaceholder('franchisee admin email').fill('d@jwt.com');
+    await page.getByRole('button', { name: 'Create' }).click();
+});
+
 test('docs page', async ({ page }) => {
     await page.goto('/docs');
     await expect(page.locator('h2')).toContainText('JWT Pizza');
