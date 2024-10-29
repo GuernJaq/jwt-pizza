@@ -41,6 +41,7 @@ jobs:
         with:
           name: package
           path: dist/
+
   deploy:
     needs: build
     permissions:
@@ -49,6 +50,7 @@ jobs:
     environment:
       name: production
       url: https://pizza.boospace.click
+      
     steps:
       - name: Create OIDC token to AWS
         uses: aws-actions/configure-aws-credentials@v4
@@ -64,11 +66,11 @@ jobs:
           path: dist/
 
       - name: Push to AWS S3
+        # Append the version to the path
         run: |
           echo Deploying $version
-          aws s3 cp dist s3://${{ secrets.APP_BUCKET }} --recursive
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.DISTRIBUTION_ID }} --paths "/*"
-
+          aws s3 cp dist s3://${{ secrets.APP_BUCKET }}/$version --recursive
+        
   release:
     needs:
       - build
