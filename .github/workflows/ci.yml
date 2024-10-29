@@ -98,6 +98,7 @@ jobs:
         with:
           tag: stage-version-${{ env.version }}
           name: Staging ${{ env.version }}
+          makeLatest: true
           body: |
             ## 🚀 Changes
 
